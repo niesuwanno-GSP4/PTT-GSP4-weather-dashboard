@@ -1,3 +1,4 @@
+ url=https://github.com/niesuwanno-GSP4/PTT-GPP4-weather-dashboard/blob/main/index.html
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -61,6 +62,11 @@
     .current-box { background: linear-gradient(135deg, #fff9f0 0%, #fff5eb 100%); }
     .current-box .card-value { color: #0099cc; }
     
+    /* Rain Box */
+    .rain-box { background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%); }
+    .rain-box .card-value { color: #0066cc; }
+    .rain-box h3 { color: #0066cc; }
+    
     /* Warning Box */
     .warning-box { background: #fffbea; border-left: 4px solid #ff9933; }
     
@@ -69,11 +75,11 @@
     .rec-box ul { margin: 12px 0 0 20px; color: #666; line-height: 1.8; }
     
     /* Forecast */
-    .forecast-section { background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .forecast-section { background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
     .forecast-title { font-size: 18px; font-weight: 600; color: #333; margin-bottom: 16px; }
     .forecast-days { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; }
     .forecast-day {
-      min-width: 100px;
+      min-width: 110px;
       padding: 16px;
       background: #f7fafc;
       border-radius: 8px;
@@ -83,15 +89,18 @@
     .forecast-day-label { font-size: 12px; color: #999; margin-bottom: 8px; font-weight: 500; }
     .forecast-day-temp { font-size: 20px; font-weight: bold; color: #333; }
     .forecast-day-hi { font-size: 12px; color: #ff9933; margin-top: 6px; font-weight: 600; }
+    .forecast-day-rain { font-size: 12px; color: #0066cc; margin-top: 4px; }
+    .forecast-day-rain-icon { font-size: 16px; }
     
     /* Hourly Table */
-    .table-section { background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-top: 24px; }
+    .table-section { background: #fff; padding: 24px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 24px; }
     .table-title { font-size: 16px; font-weight: 600; color: #333; margin-bottom: 16px; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th { background: #e8eef7; padding: 12px; text-align: left; color: #555; font-weight: 600; }
     td { padding: 12px; border-bottom: 1px solid #f0f0f0; }
     tr:hover { background: #fafafa; }
     .heat-index { color: #ff9933; font-weight: bold; }
+    .rain-data { color: #0066cc; font-weight: bold; }
     .status-danger { color: #ff0000; }
     .status-warning { color: #ff9933; }
     .status-ok { color: #00aa00; }
@@ -148,6 +157,16 @@
         </div>
       </div>
 
+      <div class="card rain-box">
+        <div class="card-icon">🌧️</div>
+        <h3>ปริมาณฝนรายชั่วโมง</h3>
+        <div class="card-value" id="rainNow">--</div>
+        <div class="card-sub">mm</div>
+        <div style="margin-top: 12px; font-size: 12px; color: #0066cc;">
+          ความน่าจะเป็นฝน: <span id="rainProbNow">--</span>%
+        </div>
+      </div>
+
       <div class="card rec-box">
         <div class="card-icon">💡</div>
         <h3>คำแนะนำ</h3>
@@ -157,7 +176,7 @@
       </div>
     </div>
 
-    <!-- 7-Day Forecast -->
+    <!-- 7-Day Forecast with Precipitation -->
     <div class="forecast-section">
       <div class="forecast-title">📅 พยากรณ์อากาศ 7 วันข้างหน้า</div>
       <div class="forecast-days" id="forecastDays">
@@ -165,9 +184,27 @@
       </div>
     </div>
 
-    <!-- Hourly Table -->
+    <!-- Daily Precipitation Summary -->
     <div class="table-section">
-      <div class="table-title">📊 ดัชนีความร้อนรายชั่วโมง (08:00 - 17:00)</div>
+      <div class="table-title">💧 ปริมาณฝนรายวัน</div>
+      <table id="dailyRainTable">
+        <thead>
+          <tr>
+            <th>วันที่</th>
+            <th>ปริมาณฝนรวม (mm)</th>
+            <th>ความน่าจะเป็นฝน (%)</th>
+            <th>สถานะ</th>
+          </tr>
+        </thead>
+        <tbody id="dailyRainBody">
+          <tr><td colspan="4" style="text-align:center;">โปรดรอข้อมูล...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Hourly Table with Precipitation -->
+    <div class="table-section">
+      <div class="table-title">📊 ดัชนีความร้อนและปริมาณฝนรายชั่วโมง (08:00 - 17:00)</div>
       <table id="hourlyTable">
         <thead>
           <tr>
@@ -176,10 +213,12 @@
             <th>ระดับ</th>
             <th>อุณหภูมิ (°C)</th>
             <th>ความชื้น (%)</th>
+            <th>ฝน (mm)</th>
+            <th>ความน่าจะเป็นฝน (%)</th>
           </tr>
         </thead>
         <tbody id="hourlyBody">
-          <tr><td colspan="5" style="text-align:center;">โปรดรอข้อมูล...</td></tr>
+          <tr><td colspan="7" style="text-align:center;">โปรดรอข้อมูล...</td></tr>
         </tbody>
       </table>
     </div>
@@ -211,6 +250,15 @@
       return { level: 'อันตรายมาก', status: 'status-danger', icon: '🔴' };
     }
 
+    function getRainStatus(rainfall, probability) {
+      if (rainfall === 0 && probability < 30) return '☀️ แห้ง';
+      if (rainfall === 0 && probability < 60) return '⛅ อาจมีฝน';
+      if (rainfall === 0) return '🌧️ มีฝนโอกาสสูง';
+      if (rainfall < 2.5) return '🌦️ ฝนเล็กน้อย';
+      if (rainfall < 10) return '🌧️ ฝนปานกลาง';
+      return '⛈️ ฝนหนัก';
+    }
+
     function updateTime() {
       const now = new Date();
       const hour = String(now.getHours()).padStart(2, '0');
@@ -223,7 +271,7 @@
 
     async function fetchWeather() {
       try {
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,uv_index,precipitation_probability,weathercode,windspeed_10m&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,precipitation_probability_max&timezone=Asia%2FBangkok`);
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,uv_index,precipitation,precipitation_probability,weathercode,windspeed_10m&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,precipitation_probability_max&timezone=Asia%2FBangkok`);
         const data = await res.json();
 
         // Current hour
@@ -235,6 +283,8 @@
         const uv = data.hourly.uv_index[hour];
         const wind = data.hourly.windspeed_10m[hour];
         const hi = calculateHeatIndex(T, RH);
+        const rainNow = (data.hourly.precipitation[hour] || 0).toFixed(2);
+        const rainProbNow = data.hourly.precipitation_probability[hour] || 0;
 
         // Update values
         document.getElementById('heatIndex').textContent = hi;
@@ -244,14 +294,16 @@
         document.getElementById('feelsLike').textContent = `สัมผัสเป็น ${feelsLike} °C`;
         document.getElementById('uvIndex').textContent = uv;
         document.getElementById('windSpeed').textContent = wind;
+        document.getElementById('rainNow').textContent = rainNow;
+        document.getElementById('rainProbNow').textContent = rainProbNow;
 
         // Risk recommendations
         const risk = getRiskLevel(hi);
         const recs = {
-          'ปกติ': ['ดำเนินงานตามปกติ', 'เพิ่มการบริโภคน้ำ', 'สวมใจใจหมวกและแว่น'],
+          'ปกติ': ['ดำเนินงานตามปก���ิ', 'เพิ่มการบริโภคน้ำ', 'สวมใจใจหมวกและแว่น'],
           'เตือน': ['ดื่มน้ำบ่อย ๆ', 'พักผ่อนในที่ร่มบ่อยขึ้น', 'สอบสวนอาการผิดปกติ'],
           'อันตราย': ['หยุดปฏิบัติงานหนัก', 'อยู่ในที่ร่มเต็มเวลา', 'สวมเสื้อผ้าสีอ่อน'],
-          'อันตรายมาก': ['หยุดงานทันที', 'รักษาตัวด้วยเครื่องปรับอากาศ', 'ติดต่อเอก/ก.แพทย์']
+          'อันตรายมาก': ['หยุดงานทันที', 'รักษาตัวด้ว���เครื่องปรับอากาศ', 'ติดต่อเอก/ก.แพทย์']
         };
         document.getElementById('recommendations').innerHTML = (recs[risk.level] || recs['เตือน']).map(r => `<li>${r}</li>`).join('');
 
@@ -266,14 +318,39 @@
           document.getElementById('alert').style.display = 'none';
         }
 
-        // 7-Day Forecast
-        document.getElementById('forecastDays').innerHTML = data.daily.time.map((d, i) => `
-          <div class="forecast-day">
-            <div class="forecast-day-label">${new Date(d).toLocaleDateString('th-TH', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
-            <div class="forecast-day-temp">${data.daily.temperature_2m_max[i]}° / ${data.daily.temperature_2m_min[i]}°</div>
-            <div class="forecast-day-hi">HI ~${calculateHeatIndex(data.daily.temperature_2m_max[i], 70)}°C</div>
-          </div>
-        `).join('');
+        // 7-Day Forecast with Precipitation
+        document.getElementById('forecastDays').innerHTML = data.daily.time.map((d, i) => {
+          const rain = data.daily.precipitation_sum[i] || 0;
+          const rainProb = data.daily.precipitation_probability_max[i] || 0;
+          return `
+            <div class="forecast-day">
+              <div class="forecast-day-label">${new Date(d).toLocaleDateString('th-TH', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+              <div class="forecast-day-temp">${data.daily.temperature_2m_max[i]}° / ${data.daily.temperature_2m_min[i]}°</div>
+              <div class="forecast-day-hi">HI ~${calculateHeatIndex(data.daily.temperature_2m_max[i], 70)}°C</div>
+              <div class="forecast-day-rain">
+                <span class="forecast-day-rain-icon">${rain > 0 ? '🌧️' : '☀️'}</span> ${rain.toFixed(1)}mm
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Daily Precipitation Summary
+        let dailyRainHTML = '';
+        for (let i = 0; i < data.daily.time.length; i++) {
+          const rain = data.daily.precipitation_sum[i] || 0;
+          const rainProb = data.daily.precipitation_probability_max[i] || 0;
+          const status = getRainStatus(rain, rainProb);
+          const dateStr = new Date(data.daily.time[i]).toLocaleDateString('th-TH', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+          dailyRainHTML += `
+            <tr>
+              <td>${dateStr}</td>
+              <td class="rain-data">${rain.toFixed(1)} mm</td>
+              <td>${rainProb}%</td>
+              <td>${status}</td>
+            </tr>
+          `;
+        }
+        document.getElementById('dailyRainBody').innerHTML = dailyRainHTML;
 
         // Hourly Table (08:00 - 17:00)
         let hourlyHTML = '';
@@ -282,6 +359,8 @@
           const rh = data.hourly.relative_humidity_2m[h];
           const hi_h = calculateHeatIndex(t, rh);
           const riskH = getRiskLevel(hi_h);
+          const rain = (data.hourly.precipitation[h] || 0).toFixed(2);
+          const rainProb = data.hourly.precipitation_probability[h] || 0;
           hourlyHTML += `
             <tr>
               <td>${String(h).padStart(2, '0')}:00</td>
@@ -289,6 +368,8 @@
               <td><span class="${riskH.status}">${riskH.icon} ${riskH.level}</span></td>
               <td>${t}°C</td>
               <td>${rh}%</td>
+              <td class="rain-data">${rain} mm</td>
+              <td>${rainProb}%</td>
             </tr>
           `;
         }
