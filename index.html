@@ -215,4 +215,271 @@
 
     <!-- NOAA Heat Index Reference -->
     <div class="noaa-section">
-      <div class="noaa-title">📋 ตารางอ้างอิงระดับสัญญาณความร้อน (เกณฑ์*
+      <div class="noaa-title">📋 ตารางอ้างอิงระดับสัญญาณความร้อน (เกณฑ์ NOAA)</div>
+      <table class="noaa-table">
+        <thead>
+          <tr>
+            <th>ดัชนีความร้อน</th>
+            <th>ระดับ</th>
+            <th>อาการและการแนะนำสำหรับพนักงาน</th>
+            <th>อาการและการแนะนำสำหรับนักจัดการ</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="noaa-level noaa-safe">27.0 - 32.9°C</td>
+            <td class="noaa-safe">🟢 เพียงระวัง</td>
+            <td>ดื่มน้ำอย่างน้อย 1 แก้ว 15-20 นาที และพักไม่น้อยกว่า 5 นาทีทุก 1 ชั่วโมง</td>
+            <td>หนุ่มสเดตอากาศดีทุกคนควรใส่ PPE ปกติออสด้านขึ้นพนักงาน</td>
+          </tr>
+          <tr>
+            <td class="noaa-level noaa-caution">33.0 - 41.9°C</td>
+            <td class="noaa-caution">🟡 เตือนภัย</td>
+            <td>ดื่มน้ำอย่างน้อย 1 แก้ว 15-20 นาที และพักไม่น้อยกว่า 5 นาทีทุก 1 ชั่วโมง 1 ชั่วโมง</td>
+            <td>จัดพิบก็ว่ารร่วมทั่วไทรร่วมมีเพิ่มผลพเพิ่มเทพสารจริง และเอกสารคำแนะนำสภาวาก</td>
+          </tr>
+          <tr>
+            <td class="noaa-level noaa-extreme">42.0 - 51.9°C</td>
+            <td class="noaa-extreme">🟠 อันตราย</td>
+            <td>ดื่มน้ำประมาณ 1 แก้ว 15 นาที และแพท็พิสวนอย่างน้อย 10 นาทีทุก 1 ชั่วโมง</td>
+            <td>จัดให้มีการลดปฏิบัติงาน และเฝ้าระวังสัญญาณหลักเสี่ยงสำหรับการไขไซเคร็ม</td>
+          </tr>
+          <tr>
+            <td class="noaa-level noaa-danger">≥ 52°C</td>
+            <td class="noaa-danger">🔴 อันตรายมาก</td>
+            <td>ดื่มน้ำอย่างน้อย 1 แก้ว 10-15 นาที และพักไม่น้อยกว่า 30 นาทีทุก 1 ชั่วโมง 1 ชั่วโมง</td>
+            <td>จัดเตรือมแต่เอกสารกระยะเอกสารฝากเล็กเล็กน้อยผ้าและจัดให้ประชำนักจัดการตรวจสอบสุขภาพอย่างสม่ำเสมอ</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Daily Precipitation Summary -->
+    <div class="table-section">
+      <div class="table-title">💧 ปริมาณฝนรายวัน</div>
+      <table id="dailyRainTable">
+        <thead>
+          <tr>
+            <th>วันที่</th>
+            <th>ปริมาณฝนรวม (mm)</th>
+            <th>ความน่าจะเป็นฝน (%)</th>
+            <th>สถานะ</th>
+          </tr>
+        </thead>
+        <tbody id="dailyRainBody">
+          <tr><td colspan="4" style="text-align:center;">โปรดรอข้อมูล...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Hourly Table with Precipitation -->
+    <div class="table-section">
+      <div class="table-title">📊 ดัชนีความร้อนและปริมาณฝนรายชั่วโมง (08:00 - 17:00)</div>
+      <table id="hourlyTable">
+        <thead>
+          <tr>
+            <th>เวลา</th>
+            <th>Heat Index (°C)</th>
+            <th>ระดับ</th>
+            <th>อุณหภูมิ (°C)</th>
+            <th>ความชื้น (%)</th>
+            <th>ฝน (mm)</th>
+            <th>ความน่าจะเป็นฝน (%)</th>
+          </tr>
+        </thead>
+        <tbody id="hourlyBody">
+          <tr><td colspan="7" style="text-align:center;">โปรดรอข้อมูล...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      Powered by <a href="https://open-meteo.com/" target="_blank">Open-Meteo API</a> | 
+      ข้อมูลอัปเดต: <span id="updateTime">--:--</span>
+    </div>
+  </div>
+
+  <script>
+    const LAT = 9.2435;
+    const LON = 99.8587;
+
+    function calculateHeatIndex(T, RH) {
+      let Tf = T * 9/5 + 32;
+      let HI = -42.379 + 2.04901523 * Tf + 10.14333127 * RH
+        - 0.22475541 * Tf * RH - 0.00683783 * Tf * Tf
+        - 0.05481717 * RH * RH + 0.00122874 * Tf * Tf * RH
+        + 0.00085282 * Tf * RH * RH - 0.00000199 * Tf * Tf * RH * RH;
+      return ((HI - 32) * 5 / 9).toFixed(1);
+    }
+
+    function getHeatIndexLevel(hi) {
+      if (hi < 27) return { level: 'ปกติ', status: 'status-ok', icon: '✓', badge: 'risk-safe', name: 'เพียงระวัง' };
+      if (hi < 32) return { level: 'เพียงระวัง', status: 'status-warning', icon: '⚠️', badge: 'risk-safe', name: 'เพียงระวัง' };
+      if (hi < 41.9) return { level: 'เตือนภัย', status: 'status-warning', icon: '⚠️', badge: 'risk-caution', name: 'เตือนภัย' };
+      if (hi < 51.9) return { level: 'อันตราย', status: 'status-danger', icon: '🔴', badge: 'risk-extreme', name: 'อันตราย' };
+      return { level: 'อันตรายมาก', status: 'status-danger', icon: '🔴', badge: 'risk-danger', name: 'อันตรายมาก' };
+    }
+
+    function getUVLevel(uv) {
+      if (uv < 3) return 'ต่ำ - ปกติ';
+      if (uv < 6) return 'ปานกลาง - ระวัง';
+      if (uv < 8) return 'สูง - ระวัง';
+      if (uv < 11) return 'สูงมาก - เตือนภัย';
+      return 'สุดขีด - อันตราย';
+    }
+
+    function getRainStatus(rainfall, probability) {
+      if (rainfall === 0 && probability < 30) return '☀️ แห้ง';
+      if (rainfall === 0 && probability < 60) return '⛅ อาจมีฝน';
+      if (rainfall === 0) return '🌧️ มีฝนโอกาสสูง';
+      if (rainfall < 2.5) return '🌦️ ฝนเล็กน้อย';
+      if (rainfall < 10) return '🌧️ ฝนปานกลาง';
+      return '⛈️ ฝนหนัก';
+    }
+
+    function updateTime() {
+      const now = new Date();
+      const hour = String(now.getHours()).padStart(2, '0');
+      const min = String(now.getMinutes()).padStart(2, '0');
+      const dateStr = now.toLocaleDateString('th-TH', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      document.getElementById('currentTime').textContent = hour + ':' + min;
+      document.getElementById('currentDate').textContent = dateStr;
+      document.getElementById('updateTime').textContent = hour + ':' + min;
+    }
+
+    async function fetchWeather() {
+      try {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}&hourly=temperature_2m,relative_humidity_2m,apparent_temperature,uv_index,precipitation,precipitation_probability,weathercode,windspeed_10m&daily=temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,precipitation_sum,precipitation_probability_max,uv_index_max&timezone=Asia%2FBangkok`);
+        const data = await res.json();
+
+        // Current hour
+        const now = new Date();
+        const hour = now.getHours();
+        const T = data.hourly.temperature_2m[hour];
+        const RH = data.hourly.relative_humidity_2m[hour];
+        const feelsLike = data.hourly.apparent_temperature[hour];
+        const uv = data.hourly.uv_index[hour];
+        const wind = data.hourly.windspeed_10m[hour];
+        const hi = calculateHeatIndex(T, RH);
+        const rainNow = (data.hourly.precipitation[hour] || 0).toFixed(2);
+
+        // Heat Index Level
+        const hiLevel = getHeatIndexLevel(hi);
+        const uvLevel = getUVLevel(uv);
+
+        // Update values
+        document.getElementById('heatIndex').textContent = hi;
+        document.getElementById('tempNow').textContent = T;
+        document.getElementById('humidityNow').textContent = RH;
+        document.getElementById('tempDisplay').textContent = T + '°C';
+        document.getElementById('feelsLike').textContent = `สัมผัสเป็น ${feelsLike} °C`;
+        document.getElementById('uvIndex').textContent = uv.toFixed(1);
+        document.getElementById('windSpeed').textContent = wind;
+        document.getElementById('rainNow').textContent = rainNow;
+
+        // Heat Index Badge
+        document.getElementById('heatIndexBadge').innerHTML = 
+          `<div class="risk-badge ${hiLevel.badge}">${hiLevel.name}</div>`;
+
+        // UV Warning
+        document.getElementById('uvWarning').innerHTML = 
+          `<strong>${uvLevel}</strong><br>ระวังรังสี UV`;
+
+        // Risk recommendations
+        const recs = {
+          'ปกติ': ['ดำเนินงานตามปกติ', 'เพิ่มการบริโภคน้ำ', 'สวมหมวกและแว่นกันแดด'],
+          'เพียงระวัง': ['ดื่มน้ำอย่างน้อย 1 แก้ว ทุก 15-20 นาที', 'พักไม่น้อยกว่า 5 นาที ทุก 1 ชั่วโมง', 'สังเกตอาการผิดปกติ'],
+          'เตือนภัย': ['ดื่มน้ำบ่อย ๆ 15-20 นาที', 'พัก��่อนในที่ร่มบ่อยขึ้น', 'สืบสวนอาการผิดปกติ'],
+          'อันตราย': ['ลดปฏิบัติงานหนัก', 'อยู่ในที่ร่มเต็มเวลา', 'สวมเสื้อผ้าสีอ่อน'],
+          'อันตรายมาก': ['หยุดงานทันที', 'ไปที่ห้องปรับอากาศ', 'ติดต่อแพทย์ทันที']
+        };
+        document.getElementById('recommendations').innerHTML = (recs[hiLevel.name] || recs['เตือนภัย']).map(r => `<li>${r}</li>`).join('');
+
+        // Alert
+        let alertMsg = '';
+        if (hi >= 52) {
+          alertMsg = `🔴 <strong>อันตรายมาก!</strong> Heat Index ${hi}°C (UV: ${uv.toFixed(1)}) - หยุดงานและติดต่อแพทย์`;
+          document.getElementById('alert').style.display = 'block';
+        } else if (hi >= 42) {
+          alertMsg = `🟠 <strong>อันตราย!</strong> Heat Index ${hi}°C (UV: ${uv.toFixed(1)}) - ลดการทำงานและพักบ่อยขึ้น`;
+          document.getElementById('alert').style.display = 'block';
+        } else if (hi >= 33) {
+          alertMsg = `🟡 <strong>เตือนภัย!</strong> Heat Index ${hi}°C (UV: ${uv.toFixed(1)}) - ดื่มน้ำบ่อย ๆ และพักบ่อยขึ้น`;
+          document.getElementById('alert').style.display = 'block';
+        } else if (uv >= 8) {
+          alertMsg = `☀️ <strong>UV สูง!</strong> ดัชนี UV: ${uv.toFixed(1)} - ระวังรังสี UV`;
+          document.getElementById('alert').style.display = 'block';
+        } else {
+          document.getElementById('alert').style.display = 'none';
+        }
+        document.getElementById('alert').innerHTML = alertMsg;
+
+        // 7-Day Forecast with Precipitation
+        document.getElementById('forecastDays').innerHTML = data.daily.time.map((d, i) => {
+          const rain = data.daily.precipitation_sum[i] || 0;
+          return `
+            <div class="forecast-day">
+              <div class="forecast-day-label">${new Date(d).toLocaleDateString('th-TH', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+              <div class="forecast-day-temp">${data.daily.temperature_2m_max[i]}° / ${data.daily.temperature_2m_min[i]}°</div>
+              <div class="forecast-day-hi">HI ~${calculateHeatIndex(data.daily.temperature_2m_max[i], 70)}°C</div>
+              <div class="forecast-day-rain">
+                <span>${rain > 0 ? '🌧️' : '☀️'}</span> ${rain.toFixed(1)}mm
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Daily Precipitation Summary
+        let dailyRainHTML = '';
+        for (let i = 0; i < data.daily.time.length; i++) {
+          const rain = data.daily.precipitation_sum[i] || 0;
+          const rainProb = data.daily.precipitation_probability_max[i] || 0;
+          const status = getRainStatus(rain, rainProb);
+          const dateStr = new Date(data.daily.time[i]).toLocaleDateString('th-TH', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+          dailyRainHTML += `
+            <tr>
+              <td>${dateStr}</td>
+              <td style="color: #0066cc; font-weight: bold;">${rain.toFixed(1)} mm</td>
+              <td>${rainProb}%</td>
+              <td>${status}</td>
+            </tr>
+          `;
+        }
+        document.getElementById('dailyRainBody').innerHTML = dailyRainHTML;
+
+        // Hourly Table (08:00 - 17:00)
+        let hourlyHTML = '';
+        for (let h = 8; h <= 17; h++) {
+          const t = data.hourly.temperature_2m[h];
+          const rh = data.hourly.relative_humidity_2m[h];
+          const hi_h = calculateHeatIndex(t, rh);
+          const level = getHeatIndexLevel(hi_h);
+          const rain = (data.hourly.precipitation[h] || 0).toFixed(2);
+          const rainProb = data.hourly.precipitation_probability[h] || 0;
+          hourlyHTML += `
+            <tr>
+              <td>${String(h).padStart(2, '0')}:00</td>
+              <td style="color: #ff9933; font-weight: bold;">${hi_h}°C</td>
+              <td><span class="${level.status}">${level.icon} ${level.name}</span></td>
+              <td>${t}°C</td>
+              <td>${rh}%</td>
+              <td style="color: #0066cc; font-weight: bold;">${rain} mm</td>
+              <td>${rainProb}%</td>
+            </tr>
+          `;
+        }
+        document.getElementById('hourlyBody').innerHTML = hourlyHTML;
+
+      } catch (error) {
+        console.error('Error fetching weather:', error);
+      }
+    }
+
+    updateTime();
+    fetchWeather();
+    setInterval(updateTime, 60000);
+    setInterval(fetchWeather, 3600000); // Update every hour
+  </script>
+</body>
+</html>
