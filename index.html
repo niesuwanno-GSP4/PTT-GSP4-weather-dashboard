@@ -252,5 +252,84 @@
 
         let alertMsg = '';
         if (hi >= 52) {
-          alertMsg = `🔴 <strong>อ`*
-
+          alertMsg = `🔴 <strong>อันตรายมาก!</strong> Heat Index ${hi}°C (UV: ${uv.toFixed(1)}) - หยุดงานและติดต่อแพทย์`;
+        } else if (hi >= 42) {
+          alertMsg = `🟠 <strong>อันตราย!</strong> Heat Index ${hi}°C (UV: ${uv.toFixed(1)}) - ลดการทำงานและพักบ่อยขึ้น`;
+        } else if (hi >= 33) {
+          alertMsg = `🟡 <strong>เตือนภัย!</strong> Heat Index ${hi}°C (UV: ${uv.toFixed(1)}) - ดื่มน้ำบ่อย ๆ และพักบ่อยขึ้น`;
+        } else if (uv >= 8) {
+          alertMsg = `☀️ <strong>UV สูง!</strong> ดัชนี UV: ${uv.toFixed(1)} - ระวังรังสี UV`;
+        }
+        
+        if (alertMsg) {
+          document.getElementById('alert').innerHTML = alertMsg;
+          document.getElementById('alert').style.display = 'block';
+        } else {
+          document.getElementById('alert').style.display = 'none';
+        }
+
+        document.getElementById('forecastDays').innerHTML = data.daily.time.map((d, i) => {
+          const rain = data.daily.precipitation_sum[i] || 0;
+          return `
+            <div class="forecast-day">
+              <div class="forecast-day-label">${new Date(d).toLocaleDateString('th-TH', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
+              <div class="forecast-day-temp">${data.daily.temperature_2m_max[i]}° / ${data.daily.temperature_2m_min[i]}°</div>
+              <div class="forecast-day-hi">HI ~${calculateHeatIndex(data.daily.temperature_2m_max[i], 70)}°C</div>
+              <div style="font-size: 12px; color: #0066cc; margin-top: 4px;"><span>${rain > 0 ? '🌧️' : '☀️'}</span> ${rain.toFixed(1)}mm</div>
+            </div>
+          `;
+        }).join('');
+
+        let dailyRainHTML = '';
+        for (let i = 0; i < data.daily.time.length; i++) {
+          const rain = data.daily.precipitation_sum[i] || 0;
+          const rainProb = data.daily.precipitation_probability_max[i] || 0;
+          const status = getRainStatus(rain, rainProb);
+          const dateStr = new Date(data.daily.time[i]).toLocaleDateString('th-TH', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+          dailyRainHTML += `
+            <tr>
+              <td>${dateStr}</td>
+              <td style="color: #0066cc; font-weight: bold;">${rain.toFixed(1)} mm</td>
+              <td>${rainProb}%</td>
+              <td>${status}</td>
+            </tr>
+          `;
+        }
+        document.getElementById('dailyRainBody').innerHTML = dailyRainHTML;
+
+        let hourlyHTML = '';
+        for (let h = 8; h <= 17; h++) {
+          const t = data.hourly.temperature_2m[h];
+          const rh = data.hourly.relative_humidity_2m[h];
+          const hi_h = calculateHeatIndex(t, rh);
+          const level = getHeatIndexLevel(hi_h);
+          const rain = (data.hourly.precipitation[h] || 0).toFixed(2);
+          const rainProb = data.hourly.precipitation_probability[h] || 0;
+          hourlyHTML += `
+            <tr>
+              <td>${String(h).padStart(2, '0')}:00</td>
+              <td style="color: #ff9933; font-weight: bold;">${hi_h}°C</td>
+              <td>${level.icon} ${level.level}</td>
+              <td>${t}°C</td>
+              <td>${rh}%</td>
+              <td style="color: #0066cc; font-weight: bold;">${rain} mm</td>
+              <td>${rainProb}%</td>
+            </tr>
+          `;
+        }
+        document.getElementById('hourlyBody').innerHTML = hourlyHTML;
+
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('alert').innerHTML = '❌ ไม่สามารถเชื่อมต่อกับ API';
+        document.getElementById('alert').style.display = 'block';
+      }
+    }
+
+    updateTime();
+    fetchWeather();
+    setInterval(updateTime, 60000);
+    setInterval(fetchWeather, 3600000);
+  </script>
+</body>
+</html>
